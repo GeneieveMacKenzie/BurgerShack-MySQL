@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Data;
+using burger.Models;
+using Dapper;
+
+namespace burgers.Repositories
+{
+    public class ItemRepository
+    {
+        private readonly IDbConnection _db;
+
+        public ItemRepository(IDbConnection db)
+        {
+            _db = db;
+        }
+
+        internal IEnumerable<Item> Get()
+        {
+            string sql = "SELECT * FROM items";
+            //Dapper will call to database and all objects return will be cast to <item>
+            return _db.Query<Item>(sql);
+        }
+
+        internal Item Get(string id)
+        {
+            string sql = "SELECT * FROM items WHERE id = @id";
+            //NOTE Dapper requires a second object that it can pull the properties off of and connects them through the @ symbol
+            return _db.QueryFirstOrDefault<Item>(sql, new { id });
+        }
+
+        internal Item Exists(string property, string value)
+        {
+            string sql = "SELECT * FROM items WHERE @property = @value";
+            return _db.QueryFirstOrDefault<Item>(sql, new { property, value });
+        }
+
+        internal void Create(Item itemData)
+        {
+            string sql = @"
+            INSERT INTO items
+            (id, name, description, price)
+            VALUES
+            (@Id, @Name, @Description, @Price)
+            ";
+            _db.Execute(sql, itemData);
+        }
+
+        internal void Edit(Item itemData)
+        {
+            string sql = @"
+            UPDATE items
+            SET 
+            name = @Name,
+            description = @Description,
+            price = @Price
+            WHERE id = @Id; 
+            ";
+            _db.Execute(sql, itemData);
+        }
+
+        internal void Remove(string id)
+        {
+            string sql = "DELETE FROM items WHERE id = @id";
+            _db.Execute(sql, new { id });
+        }
+    }
+}
